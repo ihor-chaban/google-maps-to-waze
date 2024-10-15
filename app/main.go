@@ -113,6 +113,10 @@ Hey! Check out this restaurant https://maps.app.goo.gl/jrDb7yQAfrJsvpaCA
 I am also capable of helping in group chats. Simply add me to the group and mention me with a link.
 Forwarding messages is just as effective as sending them directly!
 
+_*Waze app must be running before clicking on a Waze link!_
+_Otherwise the first link opening will just open the app but will not start the navigation._
+_This is a known Waze bug and not related to me._
+
 Enjoy!
 `
 )
