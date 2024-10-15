@@ -145,7 +145,9 @@ func onMessage(message *telegram.Message) error {
 		return errors.Wrap(err, "failed to map google maps url to waze link")
 	}
 	return message.Reply(&telegram.Reply{
-		Text: wazeLink.URL().String(),
+		Text:                  wazeLink.URL().String(),
+		Styled:                false,
+		DisableWebPagePreview: true,
 	})
 }
 

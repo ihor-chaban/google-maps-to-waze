@@ -129,7 +129,7 @@ func (w *WazeLink) URL() *url.URL {
 }
 
 const (
-	wazeLinkTemplate = "https://www.waze.com/ul?ll=%s&navigate=yes&zoom=5"
+	wazeLinkTemplate = "https://www.waze.com/ul?ll=%s&navigate=yes&zoom=6"
 )
 
 // WazeFromLocation constructs a new Waze link from location by extracting latitude & longitude
