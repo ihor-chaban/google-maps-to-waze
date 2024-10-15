@@ -29,8 +29,9 @@ func (m *Message) Reply(reply *Reply) error {
 }
 
 type Reply struct {
-	Text   string
-	Styled bool
+	Text                  string
+	Styled                bool
+	DisableWebPagePreview bool
 }
 
 // OnMessage is a function that is called for each message received.
@@ -113,6 +114,7 @@ func (c *clientImpl) message(update *tgbotapi.Update) *Message {
 			if reply.Styled {
 				m.ParseMode = tgbotapi.ModeMarkdown
 			}
+			m.DisableWebPagePreview = reply.DisableWebPagePreview
 			_, err := c.bot.Send(m)
 			return err
 		},

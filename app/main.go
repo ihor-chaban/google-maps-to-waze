@@ -99,13 +99,21 @@ func main() {
 const (
 	// welcomeMessage is a message that is sent when a user starts the bot.
 	welcomeMessage = `
-Welcome to Google Maps to Waze bot!
-Send me a Google Maps link and I will send you a Waze link.
+Welcome to the Google Maps to Waze bot!
+Please send a Google Maps link, and I will provide you with a Waze link.
 
 Examples:
-- Shortened: https://goo.gl/maps/1JZ8Zq4J1Z8Zq4
-- Full: https://www.google.com/maps/dir/?api=1&destination=51.107885,17.038538
-- Any text with a link: foo bar https://www.google.com/maps/dir/?api=1&destination=51.107885,17.038538
+- A short shared place link:
+https://maps.app.goo.gl/M1B5J2cipJsHdRgy5
+- A full link with coordinates:
+http://www.google.com/maps/place/40.7579747,-73.9855426
+- Any message that includes a maps link:
+Hey! Check out this restaurant https://maps.app.goo.gl/jrDb7yQAfrJsvpaCA
+
+I am also capable of helping in group chats. Simply add me to the group and mention me with a link.
+Forwarding messages is just as effective as sending them directly!
+
+Enjoy!
 `
 )
 
@@ -116,8 +124,9 @@ var httpClient = &http.Client{Timeout: 15 * time.Second, Jar: nil}
 func onMessage(message *telegram.Message) error {
 	if message.Text == "/start" {
 		return message.Reply(&telegram.Reply{
-			Text:   welcomeMessage,
-			Styled: true,
+			Text:                  welcomeMessage,
+			Styled:                true,
+			DisableWebPagePreview: true,
 		})
 	}
 
