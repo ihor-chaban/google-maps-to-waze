@@ -95,7 +95,10 @@ func (c *clientImpl) handler(f OnMessage) func(w http.ResponseWriter, r *http.Re
 		if err != nil {
 			log.Errorf("failed to process message: %v", err)
 			err = msg.Reply(&Reply{
-				Text: "Try again",
+				Text: `
+Sorry, I couldn't get a location from your message.
+Please make sure the link is valid and points to a particular location (not a search query).
+`,
 			})
 			if err != nil {
 				log.Errorf("failed to reply to message: %v", err)
