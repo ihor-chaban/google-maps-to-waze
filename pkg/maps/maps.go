@@ -20,13 +20,15 @@ type Location interface {
 }
 
 const (
-	googleMapsLatLngURLRegex     = `(-?\d+\.\d+),\s*(-?\d+\.\d+)`
-	googleMapsLatLngContentRegex = `@` + googleMapsLatLngURLRegex
+	googleMapsLatLngURLRegex            = `(-?\d+\.\d+),\s*(-?\d+\.\d+)`
+	googleMapsLatLngContentRegex        = `@` + googleMapsLatLngURLRegex
+	googleMapsLatLngContentEncodedRegex = `\\u003d(-?\d+\.\d+)%2C(-?\d+\.\d+)`
 )
 
 var (
-	latLngURLPattern     = regexp.MustCompile(googleMapsLatLngURLRegex)
-	latLngContentPattern = regexp.MustCompile(googleMapsLatLngContentRegex)
+	latLngURLPattern            = regexp.MustCompile(googleMapsLatLngURLRegex)
+	latLngContentPattern        = regexp.MustCompile(googleMapsLatLngContentRegex)
+	latLngContentEncodedPattern = regexp.MustCompile(googleMapsLatLngContentEncodedRegex)
 )
 
 type GoogleMapsLink struct {
@@ -52,6 +54,11 @@ func ParseGoogleMapsFromURL(u *url.URL, toContent UrlToContent) (*GoogleMapsLink
 
 	// Attempt to extract from the content.
 	if latLng, err := latLng(content, latLngContentPattern); err == nil {
+		return &GoogleMapsLink{latLng: latLng}, nil
+	}
+
+	// Attempt to extract encoded from the content.
+	if latLng, err := latLng(content, latLngContentEncodedPattern); err == nil {
 		return &GoogleMapsLink{latLng: latLng}, nil
 	}
 
