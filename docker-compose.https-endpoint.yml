@@ -12,6 +12,8 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
     labels:
       - com.github.nginx-proxy.nginx
+    restart: unless-stopped
+
   acme-companion:
     image: nginxproxy/acme-companion
     container_name: acme-companion
@@ -20,3 +22,6 @@ services:
       - ./config/nginx/certs:/etc/nginx/certs
       - ./config/nginx/html:/usr/share/nginx/html
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - nginx-proxy
+    restart: unless-stopped

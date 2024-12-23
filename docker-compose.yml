@@ -4,3 +4,4 @@ services:
     container_name: google-maps-to-waze
     env_file:
       - .env
+    restart: unless-stopped
