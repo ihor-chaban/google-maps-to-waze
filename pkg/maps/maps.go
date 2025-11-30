@@ -2,12 +2,13 @@ package maps
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type LatLng struct {
@@ -20,15 +21,19 @@ type Location interface {
 }
 
 const (
-	googleMapsLatLngURLRegex            = `(-?\d+\.\d+),\s*(-?\d+\.\d+)`
-	googleMapsLatLngContentRegex        = `@` + googleMapsLatLngURLRegex
-	googleMapsLatLngContentEncodedRegex = `\\u003d(-?\d+\.\d+)%2C(-?\d+\.\d+)`
+	coordinatePrecision                   = 7
+	coordinateRegex                       = `(-?\d+\.\d+)`
+	googleMapsLatLngURLRegex              = coordinateRegex + `,\s*` + coordinateRegex
+	googleMapsLatLngContentRegex          = `@` + googleMapsLatLngURLRegex
+	googleMapsLatLngContentEncodedRegex   = `\\u003d` + coordinateRegex + `%2C` + coordinateRegex
+	googleMapsAppInitializationStateRegex = `window\.APP_INITIALIZATION_STATE=\[\[\[[\d.]+,` + coordinateRegex + `,` + coordinateRegex + `\]`
 )
 
 var (
-	latLngURLPattern            = regexp.MustCompile(googleMapsLatLngURLRegex)
-	latLngContentPattern        = regexp.MustCompile(googleMapsLatLngContentRegex)
-	latLngContentEncodedPattern = regexp.MustCompile(googleMapsLatLngContentEncodedRegex)
+	latLngURLPattern                    = regexp.MustCompile(googleMapsLatLngURLRegex)
+	latLngContentPattern                = regexp.MustCompile(googleMapsLatLngContentRegex)
+	latLngContentEncodedPattern         = regexp.MustCompile(googleMapsLatLngContentEncodedRegex)
+	latLngAppInitializationStatePattern = regexp.MustCompile(googleMapsAppInitializationStateRegex)
 )
 
 type GoogleMapsLink struct {
@@ -42,7 +47,7 @@ func (l *GoogleMapsLink) LatLng() (LatLng, error) {
 // ParseGoogleMapsFromURL extracts GoogleMapsLink from the given URL.
 func ParseGoogleMapsFromURL(u *url.URL, toContent UrlToContent) (*GoogleMapsLink, error) {
 	// First, attempt to extract from URL path.
-	if latLng, err := latLng(u.Path, latLngURLPattern); err == nil {
+	if latLng, err := latLng(u.Path, latLngURLPattern, false); err == nil {
 		return &GoogleMapsLink{latLng: latLng}, nil
 	}
 
@@ -53,21 +58,26 @@ func ParseGoogleMapsFromURL(u *url.URL, toContent UrlToContent) (*GoogleMapsLink
 	}
 
 	// Attempt to extract from the content.
-	if latLng, err := latLng(content, latLngContentPattern); err == nil {
+	if latLng, err := latLng(content, latLngContentPattern, false); err == nil {
 		return &GoogleMapsLink{latLng: latLng}, nil
 	}
 
 	// Attempt to extract encoded from the content.
-	if latLng, err := latLng(content, latLngContentEncodedPattern); err == nil {
+	if latLng, err := latLng(content, latLngContentEncodedPattern, false); err == nil {
+		return &GoogleMapsLink{latLng: latLng}, nil
+	}
+
+	// Attempt to extract from APP_INITIALIZATION_STATE.
+	if latLng, err := latLng(content, latLngAppInitializationStatePattern, true); err == nil {
 		return &GoogleMapsLink{latLng: latLng}, nil
 	}
 
 	return nil, fmt.Errorf("failed to find lat lng for url: %s", u.String())
 }
 
-func latLng(content string, pattern *regexp.Regexp) (LatLng, error) {
+func latLng(content string, pattern *regexp.Regexp, swap bool) (LatLng, error) {
 	matches := pattern.FindStringSubmatch(content)
-	if matches == nil || len(matches) < 3 {
+	if len(matches) < 3 {
 		return LatLng{}, fmt.Errorf("failed to find latitude and longitude in content")
 	}
 
@@ -81,9 +91,7 @@ func latLng(content string, pattern *regexp.Regexp) (LatLng, error) {
 		return LatLng{}, fmt.Errorf("failed to parse longitude: %w", err)
 	}
 
-	// Check if latitude and longitude might be reversed
-	if lat < -90 || lat > 90 {
-		// Swap values if they are reversed
+	if swap {
 		lat, lng = lng, lat
 	}
 
@@ -146,7 +154,7 @@ func WazeFromLocation(l Location) (*WazeLink, error) {
 		return nil, errors.Wrap(err, "failed to extract lat lng from location")
 	}
 
-	geoStr := fmt.Sprintf("%.7f,%.7f", latLng.Latitude, latLng.Longitude)
+	geoStr := fmt.Sprintf("%.*f,%.*f", coordinatePrecision, latLng.Latitude, coordinatePrecision, latLng.Longitude)
 	raw := fmt.Sprintf(wazeLinkTemplate, geoStr)
 	u, err := url.Parse(raw)
 	if err != nil {

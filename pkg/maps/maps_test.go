@@ -2,6 +2,7 @@ package maps
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func coordinateTolerance() float64 {
+	return math.Pow(10, -float64(coordinatePrecision))
+}
+
 func TestParseGoogleMapsFromURL(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -20,7 +25,7 @@ func TestParseGoogleMapsFromURL(t *testing.T) {
 		expectedLink  *GoogleMapsLink
 	}{
 		{
-			name:     "Valid URL with lat-lng",
+			name:     "Valid Google Maps coordinate-based place URL with lat-lng in path",
 			inputURL: "https://www.google.com/maps/place/37.4219999,122.0840575",
 			expectedLink: &GoogleMapsLink{
 				latLng: LatLng{
@@ -30,22 +35,22 @@ func TestParseGoogleMapsFromURL(t *testing.T) {
 			},
 		},
 		{
-			name:     "Valid URL with lat-lng in reversed order",
-			inputURL: "https://www.google.com/maps/place/107.2161305,-2.4033934",
-			expectedLink: &GoogleMapsLink{
-				latLng: LatLng{
-					Latitude:  -2.4033934,
-					Longitude: 107.2161305,
-				},
-			},
-		},
-		{
-			name:     "Valid google maps URL with lat-lng in content",
+			name:     "Valid Google Maps place URL with lat-lng in path",
 			inputURL: "https://www.google.com/maps/place/Nirvana+Life+Indonesia/@-8.643427,115.1495802,15z/data=!4m20!1m13!4m12!1m4!2m2!1d115.1565824!2d-8.6409216!4e1!1m6!1m2!1s0x2dd239c88caf5ab7:0xc82282485f1666e1!2sNirvana+Life+Indonesia,+Jl.+Tirta+Empul,+Kerobokan,+Kec.+Kuta+Utara,+Kabupaten+Badung,+Bali+80361!2m2!1d115.1646432!2d-8.6455071!3m5!1s0x2dd239c88caf5ab7:0xc82282485f1666e1!8m2!3d-8.6455071!4d115.1646432!16s%2Fg%2F11rq1h0c40?entry=ttu",
 			expectedLink: &GoogleMapsLink{
 				latLng: LatLng{
 					Latitude:  -8.643427,
 					Longitude: 115.1495802,
+				},
+			},
+		},
+		{
+			name:     "Valid Google Maps app deeplink with lat-lng/lng-lat in content",
+			inputURL: "https://maps.app.goo.gl/XTkcsQu3JRpt6PGP9",
+			expectedLink: &GoogleMapsLink{
+				latLng: LatLng{
+					Latitude:  45.4921354,
+					Longitude: -73.6191235,
 				},
 			},
 		},
@@ -70,7 +75,8 @@ func TestParseGoogleMapsFromURL(t *testing.T) {
 				assert.Contains(t, err.Error(), tc.expectedError)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tc.expectedLink.latLng, link.latLng)
+				assert.InDelta(t, tc.expectedLink.latLng.Latitude, link.latLng.Latitude, coordinateTolerance())
+				assert.InDelta(t, tc.expectedLink.latLng.Longitude, link.latLng.Longitude, coordinateTolerance())
 			}
 		})
 	}
