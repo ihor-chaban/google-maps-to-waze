@@ -90,6 +90,12 @@ func (c *clientImpl) handler(f OnMessage) func(w http.ResponseWriter, r *http.Re
 			writeError(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		if update.Message == nil {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
 		msg := c.message(update)
 		err = f(msg)
 		if err != nil {
@@ -109,6 +115,14 @@ Please make sure the link is valid and points to a particular location (not a se
 }
 
 func (c *clientImpl) message(update *tgbotapi.Update) *Message {
+	if update.Message == nil {
+		return &Message{
+			Text: "",
+			replyFunc: func(reply *Reply) error {
+				return errors.New("cannot reply to nil message")
+			},
+		}
+	}
 	return &Message{
 		Text: update.Message.Text,
 		replyFunc: func(reply *Reply) error {
